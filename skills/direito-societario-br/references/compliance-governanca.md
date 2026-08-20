@@ -13,6 +13,19 @@ SaaS, e-commerce, franquia, etc.
 - **Controlador**: a quem competem as decisões sobre o tratamento
 - **Operador**: quem realiza o tratamento em nome do controlador
 - **Encarregado (DPO)**: pessoa indicada para comunicação entre controlador, titulares e ANPD
+  (definição alterada pela Lei 15.352/2026)
+
+> **Atualização institucional:** desde a **Lei 15.352, de 25/02/2026**, a ANPD é a **Agência**
+> Nacional de Proteção de Dados — agência reguladora, autarquia de natureza especial vinculada ao
+> MJSP, com autonomia funcional, técnica, decisória, administrativa e financeira. A lei alterou a
+> Lei 13.709/2018 (inclusive o art. 55-A) e criou carreira própria de regulação e fiscalização.
+> Não escrever mais "Autoridade Nacional de Proteção de Dados".
+
+> **Transferência internacional de dados:** havendo transferência internacional, é obrigatório
+> adotar um dos instrumentos da **Resolução CD/ANPD nº 19, de 23/08/2024** — cláusulas-padrão
+> contratuais, cláusulas contratuais específicas ou normas corporativas globais. O período de
+> adequação **encerrou em 23/08/2025**: as cláusulas-padrão já são exigíveis. Contrato com fluxo
+> internacional sem esse instrumento é 🔴 CRÍTICO.
 
 ### Cláusulas contratuais obrigatórias/recomendadas
 1. **Definição dos papéis**: quem é controlador, quem é operador (ou co-controladores)
@@ -149,3 +162,21 @@ do Contrato, sem prejuízo de perdas e danos.
 - [ ] Canal de denúncia referenciado
 - [ ] Programa de integridade referenciado (se contrato público)
 - [ ] Sanctions compliance (se operação internacional — OFAC, UE, UN)
+
+
+---
+
+## Atualização da Camada Infralegal de Anticorrupção (verificado em 2026-08-20)
+
+- **Decreto 11.129/2022** (vigência 18/07/2022) regulamenta a Lei 12.846/2013 e **revogou
+  expressamente o Decreto 8.420/2015** (art. 70). Programa de integridade: **art. 56**
+  (definição) e **art. 57** (parâmetros de avaliação). Citar o Decreto 8.420/2015 é erro.
+- **Portaria Normativa Interministerial CGU/AGU nº 1, de 19/12/2025** (DOU 23/12/2025) unificou
+  as regras de acordo de leniência e **revogou** a IN CGU/AGU 2/2018, a Portaria Conjunta
+  CGU/AGU 4/2019 e a Portaria Normativa Interministerial CGU/AGU 36/2022. Tem capítulo próprio
+  (Cap. VII) sobre avaliação e monitoramento de programa de integridade — usar como parâmetro
+  ao redigir cláusula que exija programa da contraparte.
+- **Governança de companhia aberta**: **Resolução CVM 168/2022** — voto plural (Lei 6.404/76,
+  art. 110-A, até 10 votos por ação ordinária), **20% de conselheiros independentes** em
+  companhias categoria A com valores mobiliários negociados, e regras de acumulação entre CEO e
+  presidente do conselho.

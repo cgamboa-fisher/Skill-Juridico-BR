@@ -1,0 +1,23 @@
+{
+  "name": "direito-societario-br",
+  "version": "0.2.0",
+  "description": "Análise, elaboração e revisão de contratos e documentos jurídicos sob a legislação societária e empresarial brasileira, com calibração de escopo por capacidade do modelo.",
+  "author": {
+    "name": "Carlos Gamboa"
+  },
+  "homepage": "https://github.com/cgamboa-fisher/Skill-Juridico-BR",
+  "repository": "https://github.com/cgamboa-fisher/Skill-Juridico-BR",
+  "license": "SEE LICENSE IN README.md",
+  "keywords": [
+    "direito-societario",
+    "direito-empresarial",
+    "brasil",
+    "contratos",
+    "m&a",
+    "venture-capital",
+    "compliance",
+    "lgpd",
+    "legal",
+    "portuguese"
+  ]
+}

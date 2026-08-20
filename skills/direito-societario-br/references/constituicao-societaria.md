@@ -19,7 +19,14 @@ A LTDA é o tipo societário mais utilizado no Brasil (~90% das empresas). Ponto
 
 **Regras de quórum (CC art. 1.076):**
 - Unanimidade: designar administrador não-sócio com capital não integralizado
-- 3/4 do capital: modificação do contrato social, incorporação/fusão/dissolução
+- **Mais da metade do capital social** (CC art. 1.076, II): modificação do contrato social,
+  incorporação, fusão, dissolução ou cessação do estado de liquidação.
+  ⚠️ **O quórum de 3/4 foi REVOGADO** — a Lei 14.451/2022 revogou o inciso I do art. 1.076.
+  Minuta que exija 3/4 está desatualizada (embora o contrato social possa, por autonomia
+  privada, estipular quórum contratual mais alto — se for a intenção, dizer isso expressamente).
+- **Designação de administrador não sócio** (CC art. 1.061, alt. Lei 14.451/2022): **2/3 dos
+  sócios** enquanto o capital não estiver integralizado; **mais da metade do capital social**
+  após a integralização.
 - 2/3 do capital: designar administrador não-sócio com capital integralizado
 - Maioria do capital: demais deliberações, salvo disposição diversa no contrato
 - Maioria dos presentes: destituição de administrador-sócio designado em ato separado
@@ -76,9 +83,16 @@ A LTDA é o tipo societário mais utilizado no Brasil (~90% das empresas). Ponto
 
 ### Sociedade Unipessoal — SLU (CC art. 1.052, §§1º e 2º)
 
-Após Lei 13.874/19, substituiu a EIRELI:
+Fundamento: **CC art. 1.052, §§ 1º e 2º**, incluídos pela Lei 13.874/2019.
+
+A SLU substituiu a EIRELI, que foi **extinta pelo art. 41 da Lei 14.195/2021** — as EIRELI
+existentes foram transformadas em sociedades limitadas de forma **automática e de ofício** pelas
+Juntas Comerciais, com efeito desde 27/08/2021, sem necessidade de alteração do ato constitutivo
+(Ofício Circular SEI 4856/2022/ME — DREI). **Não oferecer EIRELI como opção de constituição.**
+
+Características:
 - Um único sócio, responsabilidade limitada
-- Sem exigência de capital mínimo (EIRELI exigia 100 salários mínimos)
+- Sem exigência de capital mínimo (a extinta EIRELI exigia 100 salários mínimos)
 - Pessoa natural pode ser titular de mais de uma SLU
 - Regida pelas normas da LTDA no que couber
 

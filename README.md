@@ -1,252 +1,198 @@
-# 🇧🇷 Direito Societário BR — Claude Code Skill
+# 🇧🇷 Direito Societário BR — Plugin para Cowork, Claude.ai e Claude Code
 
-**AI-powered legal analysis, drafting, and review for Brazilian corporate and business law.**
+Skill especializado em análise, elaboração e revisão de contratos e documentos jurídicos sob a
+legislação societária e empresarial brasileira. Para advogados, assessores jurídicos, venture
+builders e profissionais que lidam com contratos comerciais no Brasil.
 
-Skill especializado em análise, elaboração e revisão de contratos e documentos jurídicos
-sob a legislação societária e empresarial brasileira. Desenvolvido para advogados, assessores
-jurídicos, venture builders, e profissionais que lidam com contratos comerciais no Brasil.
+> ⚠️ **Disclaimer** — Ferramenta de apoio. Não constitui parecer jurídico e não substitui a
+> consulta a advogado habilitado na OAB. Toda análise gerada deve ser revisada por profissional
+> qualificado antes de uso em operação real.
 
-> ⚠️ **Disclaimer**: Este skill é uma ferramenta de apoio. Não constitui parecer jurídico
-> e não substitui a consulta a advogado habilitado na OAB. Toda análise gerada deve ser
-> revisada por profissional qualificado antes de uso em operações reais.
+**Versão 0.2.0** · Legislação verificada contra fontes oficiais em **20/08/2026**.
+
+---
+
+## O que mudou na 0.2.0
+
+Esta versão corrige erros jurídicos materiais da 0.1.0 e adiciona calibração por modelo.
+Ver `CHANGELOG.md` para a lista completa. Em resumo:
+
+- **Calibração de execução por tier de modelo** (FULL / STANDARD / MÍNIMO), com gates que
+  bloqueiam tarefas de alto risco em modelos que não as sustentam, e declaração de procedência
+  em todo output.
+- **Nove correções de fundamento legal** — EIRELI extinta, quóruns de LTDA pós-Lei 14.451/2022,
+  fundamentação real do non-compete, artigos do investidor-anjo, Decreto 13.609/43 revogado,
+  escopo da Lei 14.063/2020, ANPD como Agência, cláusulas-padrão de transferência internacional,
+  Decreto 8.420/2015 revogado.
+- **Reforma tributária do consumo** — nova referência sobre IBS/CBS em cláusulas de preço.
+- **Correção da ferramenta de interação** — a 0.1.0 instruía o modelo a chamar `ask_user_input`,
+  que não existe. Agora usa `AskUserQuestion`, com formato correto e fallback em texto.
+- **Link morto corrigido** — o workflow de tracked changes remetia a um `CLAUDE.md` inexistente
+  no repositório; agora é uma referência própria.
 
 ---
 
 ## Instalação
 
-### Claude Code (Terminal / Bash)
+### Cowork (Claude desktop app)
+
+1. Baixe o arquivo `direito-societario-br.plugin`.
+2. Arraste-o para a conversa no Cowork, ou abra **Configurações → Plugins → Instalar**.
+3. Confirme a instalação no card que aparece na conversa.
+
+### Claude.ai (web e app)
+
+1. Acesse **Configurações → Capacidades** e ative *Code execution and file creation*.
+2. Em **Skills**, clique em **+ Add** e faça upload do `.plugin` (ou do `.skill` da pasta
+   `skills/direito-societario-br/`).
+
+### Claude Code
 
 ```bash
-# Clonar ou copiar a pasta do skill para o diretório de skills do Claude Code
-# Opção 1 — Copiar diretamente para o diretório global de skills
-cp -r direito-societario-br ~/.claude/skills/direito-societario-br
+# Como plugin
+claude plugin install ./direito-societario-br
 
-# Opção 2 — Clonar em local de sua preferência e criar symlink
-cp -r direito-societario-br ~/Developer/direito-societario-br
-ln -s ~/Developer/direito-societario-br ~/.claude/skills/direito-societario-br
-
-# Verificar instalação
+# Ou apenas a skill, no diretório global
+cp -r skills/direito-societario-br ~/.claude/skills/direito-societario-br
 ls ~/.claude/skills/direito-societario-br/SKILL.md
 ```
 
-### Claude Code (Desktop App)
-
-1. Abra o Claude Code Desktop
-2. Vá em **Settings** (ícone de engrenagem)
-3. Navegue até **Skills**
-4. Clique em **"Add Skill"** ou **"Import"**
-5. Selecione a pasta `direito-societario-br` ou o arquivo `direito-societario-br.skill`
-6. O skill será ativado automaticamente quando relevante
-
-### Claude.ai (Web / App)
-
-1. Acesse [claude.ai/settings/capabilities](https://claude.ai/settings/capabilities)
-2. Ative **"Code execution and file creation"**
-3. Role até a seção **Skills** e clique em **"+ Add"**
-4. Faça upload do arquivo `direito-societario-br.skill`
-5. Pronto — Claude ativará o skill automaticamente quando detectar contexto jurídico brasileiro
-
 ### Desinstalar
 
-```bash
-rm -rf ~/.claude/skills/direito-societario-br
-```
+Cowork e Claude.ai: remover em **Configurações → Plugins**.
+Claude Code: `rm -rf ~/.claude/skills/direito-societario-br`
 
 ---
 
-## Estrutura do Skill
+## Calibração por modelo
+
+Esta skill declara um modelo mínimo recomendado e ajusta o escopo do que entrega conforme a
+capacidade do modelo em execução. O objetivo é impedir o pior cenário: um contrato revisado por
+um modelo de porte reduzido, devolvendo observações genéricas, e sendo lido como revisão completa.
+
+| Tier | Modelos | Escopo |
+|---|---|---|
+| **FULL** | Opus 5 e equivalentes de fronteira | Escopo integral: clause-by-clause exaustiva, subagentes por área de due diligence, redline + fallback, XML de tracked changes, contratos multi-anexo |
+| **STANDARD** | Sonnet não-fronteira, modelo não identificado | Análise sequencial, até ~20 cláusulas. Vedado: XML de tracked changes e DD multi-área em passe único |
+| **MÍNIMO** | Haiku e modelos de porte reduzido | Somente extração de termos-chave e checklist de red flags. Vedado emitir redline ou apresentar como revisão jurídica |
+
+Todo output abre com um bloco de procedência declarando tier, modelo configurado, escopo
+executado e data da verificação de vigência legislativa. A detecção é **heurística**: o modelo
+que atende um turno pode diferir do configurado, e a skill diz isso em vez de afirmar certeza.
+
+**Recomendação:** rode em **Opus 5** para qualquer trabalho de review ou minuta destinado a uso
+real. Os tiers inferiores existem para degradar com honestidade, não como equivalentes.
+
+---
+
+## Estrutura
 
 ```
 direito-societario-br/
-├── SKILL.md                                   # Skill principal (382 linhas)
-└── references/                                # Referências carregadas on-demand
-    ├── constituicao-societaria.md             # Tipos societários (LTDA, S.A., SLU, SCP, SPE)
-    ├── acordo-socios.md                       # Acordo de sócios/acionistas
-    ├── ma-operations.md                       # Operações de M&A
-    ├── vc-startups.md                         # Venture capital e startups
-    ├── compliance-governanca.md               # LGPD, anticorrupção, ESG, governança
-    ├── contratos-empresariais.md              # Contratos comerciais diversos
-    └── proposta-para-contrato.md              # Sub-skill: proposta → contrato
+├── .claude-plugin/
+│   └── plugin.json
+├── skills/
+│   └── direito-societario-br/
+│       ├── SKILL.md
+│       └── references/
+│           ├── atualizacoes-legislativas.md      # ⭐ novo — registro de vigência
+│           ├── tributacao-contratos.md           # ⭐ novo — IBS/CBS em cláusulas
+│           ├── revisao-docx-tracked-changes.md   # ⭐ novo — corrige link morto
+│           ├── constituicao-societaria.md
+│           ├── acordo-socios.md
+│           ├── ma-operations.md
+│           ├── vc-startups.md
+│           ├── compliance-governanca.md
+│           ├── contratos-empresariais.md
+│           └── proposta-para-contrato.md
+├── CHANGELOG.md
+└── README.md
 ```
 
----
+### Referências
 
-## Descrição dos Componentes
-
-### SKILL.md — Arquivo Principal
-
-O arquivo raiz que o Claude carrega ao ativar o skill. Contém:
-
-- **Legislação de referência**: tabela com 12 leis/regulamentos mapeados (CC, Lei 6.404/76, LGPD, Lei Anticorrupção, Marco Legal das Startups, etc.)
-- **Interação via ask_user_input**: instruções explícitas para o Claude coletar informações faltantes via perguntas interativas com opções tappable, evitando suposições
-- **Fluxo de trabalho em 4 etapas**: identificação de contexto → análise (review mode) → elaboração (draft mode) → categorização
-- **Template de análise clause-by-clause**: classificação 🔴🟡🟢 com fundamentação legal, redline sugerido e fallback
-- **Matriz de risco**: critérios objetivos para classificar cláusulas como críticas, atenção ou adequadas
-- **10 Regras de Ouro**: princípios invioláveis (citar fundamento legal, alertar questões tributárias, 2 testemunhas, LGPD sempre, etc.)
-- **Formatos de saída padronizados**: templates para análise/review e para minutas/elaboração
-
-### references/constituicao-societaria.md
-Referência completa sobre **tipos societários brasileiros**:
-- LTDA (CC arts. 1.052-1.087): cláusulas obrigatórias, quóruns, integralização, cessão de quotas, exclusão de sócio
-- S.A. (Lei 6.404/76): aberta vs. fechada, órgãos societários, acordo de acionistas (art. 118), direito de retirada, tag along
-- SLU, SCP, SPE, Consórcio
-- Checklist completo para contrato social de LTDA (19 itens)
-
-### references/acordo-socios.md
-Referência sobre **acordos de quotistas e acionistas**:
-- Estrutura padrão em 6 seções (governança, transferência, deadlock, saída, acessórias)
-- Matérias reservadas (lista de 15+ matérias típicas com veto rights)
-- ROFR, ROFO, tag along, drag along, lock-up — mecânicas e armadilhas
-- Mecanismos de deadlock (shotgun, Russian roulette, leilão reverso, mediação)
-- Apuração de haveres (valor patrimonial, EBITDA, DCF, perito)
-- Tabela de 9 red flags com severidade
-
-### references/ma-operations.md
-Referência sobre **fusões e aquisições no Brasil**:
-- Estruturas (share deal vs. asset deal vs. incorporação/fusão/cisão)
-- 5 fases da operação: preliminar → due diligence → SPA → condições precedentes → closing
-- Checklist de due diligence em 8 áreas (societário, trabalhista, tributário, contratual, regulatório, PI, imobiliário, LGPD)
-- Reps & warranties — padrões brasileiros, knowledge qualifiers, disclosure schedules
-- Mecanismos de preço (locked box vs. completion accounts vs. earn-out)
-- Escrow/holdback — percentuais e prazos de mercado
-- Cláusula MAC com carve-outs típicos
-- Aspectos tributários (ganho de capital PF/PJ, ITBI, ágio)
-- Tabela de 9 red flags
-
-### references/vc-startups.md
-Referência sobre **venture capital e startups**:
-- Mútuo conversível (instrumento brasileiro — diferenças do SAFE americano)
-- Contrato de opção de compra de participação
-- Investidor-anjo (LC 182/21)
-- Term sheet de rodada — termos econômicos (liquidation preference, antidiluição) e de controle (board, veto, drag/tag)
-- Vesting/ILP: stock options (Lei 6.404/76, art. 168 §3º), vesting de quotas (LTDA), phantom stock/SAR
-- Good leaver / bad leaver
-- Checklist de rodada de investimento (12 itens)
-- Tabela de 9 red flags
-
-### references/compliance-governanca.md
-Referência sobre **compliance corporativo**:
-- LGPD em contratos: quando incluir, definições-chave, 12 cláusulas obrigatórias/recomendadas, modelo completo de DPA
-- Lei Anticorrupção: aplicação em contratos, modelo de cláusula anticorrupção, programa de integridade
-- Governança corporativa: LTDA e S.A. fechada, referências IBGC
-- ESG em cláusulas contratuais: modelo de cláusula
-- Checklist de compliance em contratos (11 itens)
-
-### references/contratos-empresariais.md
-Referência sobre **contratos comerciais diversos**:
-- Joint venture (contratual e societária)
-- Franquia (Lei 13.966/19 — COF, cláusulas obrigatórias)
-- Licenciamento de tecnologia/PI (INPI, tipos de licença, royalties, dedutibilidade)
-- Representação comercial (Lei 4.886/65 — indenização mínima obrigatória)
-- Prestação de serviços (risco de pejotização)
-- NDA/Confidencialidade
-- Cessão de direitos autorais (Lei 9.610/98)
-- SLA — Service Level Agreement
-- Boilerplate brasileiro (12 cláusulas gerais padrão)
-
-### references/proposta-para-contrato.md — Sub-Skill
-**Workflow de conversão de proposta comercial em contrato**, com:
-- Etapa 1: extração e mapeamento automático (tabela campo→cláusula)
-- Etapa 2: coleta interativa de lacunas via `ask_user_input` (4 blocos de perguntas por tipo de contrato)
-- Etapa 3: geração do contrato completo (template com 14 cláusulas)
-- Etapa 4: checklist de validação pós-geração (14 verificações automáticas)
-- Etapa 5: apresentação e iteração com o usuário
-- 3 tabelas de mapeamento por tipo (serviços, fornecimento, software)
-- Lista de 13 cláusulas que propostas nunca contêm mas contratos sempre precisam
-- Red flags de propostas comerciais
+| Arquivo | Conteúdo |
+|---|---|
+| `atualizacoes-legislativas.md` | Tabela de correções obrigatórias: o que material antigo afirma de errado e qual é a citação correta, com fonte. Consultar antes de fundamentar recomendação de alto impacto |
+| `tributacao-contratos.md` | IBS/CBS/IS e a transição 2026-2033. Checklist de cláusula de preço, modelo de núcleo de cláusula tributária, ITBI, ganho de capital, ágio, Tema 1.226 do STJ sobre stock options |
+| `revisao-docx-tracked-changes.md` | Workflow de OOXML, tabela de erros que corrompem o `.docx` silenciosamente, checklist de entrega. Tier FULL obrigatório |
+| `constituicao-societaria.md` | LTDA, S.A., SLU, SCP, SPE, consórcio. Quóruns atualizados pela Lei 14.451/2022 |
+| `acordo-socios.md` | Governança, matérias reservadas, ROFR/ROFO, tag e drag along, deadlock, apuração de haveres |
+| `ma-operations.md` | Share vs. asset deal, cinco fases, DD em 8 áreas, reps & warranties, mecanismos de preço, MAC |
+| `vc-startups.md` | Mútuo conversível, SAFE adaptado, investidor-anjo, term sheet, vesting e ILP, antidiluição |
+| `compliance-governanca.md` | LGPD e DPA, Resolução CD/ANPD 19/2024, anticorrupção, programa de integridade, ESG |
+| `contratos-empresariais.md` | Joint venture, franquia, licenciamento, representação comercial, serviços, SLA, NDA |
+| `proposta-para-contrato.md` | Conversão proposta → contrato em 5 etapas, mapeamento campo→cláusula, templates |
 
 ---
 
-## Exemplos de Uso
+## Exemplos de uso
 
-### Revisão de Contrato
 ```
 Revise este contrato social de LTDA e identifique cláusulas problemáticas.
 Sou o sócio minoritário com 30% das quotas.
 ```
 
-### Elaboração de Acordo de Sócios
 ```
-Preciso de um acordo de quotistas para uma LTDA com 3 sócios (60/25/15).
-Quero incluir tag along, drag along, matérias de veto, e cláusula shotgun para deadlock.
+Preciso de um acordo de quotistas para uma LTDA com 3 sócios (60/25/15),
+com tag along, drag along, matérias de veto e shotgun para deadlock.
 ```
 
-### Análise de Term Sheet
 ```
 Analise este term sheet de Series A. Estou no lado da startup (founder).
-O investidor propõe liquidation preference de 1.5x participante com full ratchet.
+O investidor propõe liquidation preference de 1,5x participante com full ratchet.
 ```
 
-### Conversão de Proposta em Contrato
 ```
-Transforme esta proposta comercial em contrato formal de prestação de serviços.
+Transforme esta proposta comercial em contrato de prestação de serviços.
 [anexar proposta.pdf]
 ```
 
-### Due Diligence
 ```
 Monte um checklist de due diligence para aquisição de uma empresa de tecnologia
-(LTDA, SaaS B2B, 50 funcionários, faturamento R$10M/ano).
+(LTDA, SaaS B2B, 50 funcionários, faturamento R$ 10M/ano).
 ```
 
 ---
 
-## Legislação Coberta
+## Skill companheiro
 
-| Lei | Escopo no Skill |
-|---|---|
-| Código Civil (Lei 10.406/02) | Sociedades, contratos, obrigações |
-| Lei das S.A. (Lei 6.404/76) | Sociedades por ações, governança |
-| Lei de Liberdade Econômica (Lei 13.874/19) | SLU, simplificação |
-| Marco Legal das Startups (LC 182/21) | Investidor-anjo, sandbox |
-| LGPD (Lei 13.709/18) | Proteção de dados em contratos |
-| Lei Anticorrupção (Lei 12.846/13) | Compliance, responsabilidade PJ |
-| Lei de Recuperação Judicial (Lei 11.101/05) | Recuperação e falência |
-| Lei de PI (Lei 9.279/96) | Licenciamento, patentes, marcas |
-| Lei do CADE (Lei 12.529/11) | Atos de concentração |
-| Lei de Arbitragem (Lei 9.307/96) | Cláusula arbitral |
-| Lei de Franquias (Lei 13.966/19) | COF, contrato de franquia |
-| CLT | Non-compete, vesting, vínculo |
-| Lei de Direitos Autorais (Lei 9.610/98) | Cessão, software |
-| Lei de Software (Lei 9.609/98) | Titularidade, licenciamento |
-| CPC (Lei 13.105/15) | Título executivo (art. 784) |
+Para **Direito de Família** (divórcio, partilha — inclusive de participações societárias —,
+pensão, guarda, regime de bens, pacto antenupcial), use o skill independente
+`direito-familia-br`. Em divórcio que envolva quotas ou ações, os dois trabalham juntos.
 
 ---
 
-## Compatibilidade
+## Manutenção
 
-| Ferramenta | Suporte |
-|---|---|
-| Claude Code | ✅ Nativo |
-| Claude.ai (Pro/Max/Team/Enterprise) | ✅ Via upload de .skill |
-| Claude Desktop | ✅ Via import |
-| OpenAI Codex | ✅ Copiar para diretório de skills |
-| Cursor | ✅ Copiar para diretório de skills |
-| Gemini CLI | ✅ Via conversão (scripts disponíveis em repos como alirezarezvani/claude-skills) |
+O maior risco desta skill não é omitir — é citar com confiança um dispositivo revogado. A
+legislação societária, tributária e de proteção de dados brasileira se moveu de forma
+significativa entre 2021 e 2026 e continuará se movendo.
+
+Ao atualizar:
+
+1. Verifique contra `planalto.gov.br` (texto consolidado) e o `gov.br` do órgão competente
+   (DREI, ANPD, CVM, CADE, CGU) para a camada infralegal.
+2. Registre a mudança em `references/atualizacoes-legislativas.md`, inclusive a afirmação
+   errada que passa a ser armadilha.
+3. Atualize a data de verificação no topo daquele arquivo, no `README.md` e no `CHANGELOG.md`.
+
+Pull requests bem-vindos para atualização legislativa, novos templates, correção de citações e
+novos sub-skills (tributário, trabalhista, regulatório).
 
 ---
 
 ## Licença
 
-Este skill é fornecido "as-is" para uso pessoal e profissional. Não constitui assessoria
-jurídica. O autor não se responsabiliza pelo uso inadequado ou por decisões tomadas com
-base exclusiva nas análises geradas por este skill.
-
-O conteúdo jurídico reflete a legislação brasileira vigente até abril de 2026. Alterações
-legislativas posteriores podem tornar partes deste skill desatualizadas.
-
-## Contribuições
-
-Pull requests são bem-vindos para:
-- Atualização de referências legislativas
-- Novos templates de documentos
-- Correção de referências a artigos de lei
-- Novos sub-skills para áreas específicas (tributário, trabalhista, regulatório)
+Fornecido "as-is" para uso pessoal e profissional. Não constitui assessoria jurídica. O autor
+não se responsabiliza pelo uso inadequado ou por decisões tomadas com base exclusiva nas
+análises geradas.
 
 ## Créditos
 
-Desenvolvido com auxílio de Claude (Anthropic) para uso com Claude Code e ferramentas
-compatíveis com o padrão Agent Skills. Inspirado nos projetos:
+Desenvolvido para uso com Claude (Anthropic) e ferramentas compatíveis com o padrão Agent
+Skills. Inspirado em:
+
 - [lawvable/awesome-legal-skills](https://github.com/lawvable/awesome-legal-skills)
 - [evolsb/claude-legal-skill](https://github.com/evolsb/claude-legal-skill)
 - [anthropics/knowledge-work-plugins/legal](https://github.com/anthropics/knowledge-work-plugins/blob/main/legal/README.md)

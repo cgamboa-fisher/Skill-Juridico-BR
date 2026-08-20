@@ -47,7 +47,7 @@ Alternativa ao mútuo conversível:
 - Exercício: mediante evento gatilho (rodada qualificada, prazo)
 - Preço de exercício: pré-definido ou com fórmula (discount/cap)
 
-### 3. Investimento-Anjo (LC 182/21, arts. 2º-3º)
+### 3. Investimento-Anjo (LC 182/21, arts. 5º, 6º e 8º — o art. 7º foi VETADO)
 
 - Aporte de capital por pessoa física ou jurídica (investidor-anjo)
 - Não é sócio: não tem direito a voto, gestão, ou responsabilidade por dívidas
@@ -93,7 +93,7 @@ Investimento mediante subscrição de novas quotas/ações:
 ### Termos dos Founders
 - **Vesting**: aquisição progressiva de participação (tipicamente 4 anos com 1 ano de cliff)
 - **Lock-up**: restrição de venda por período (2-5 anos)
-- **Non-compete**: durante e após desligamento (2 anos máximo — jurisprudência)
+- **Non-compete**: durante e após o desligamento. **Não existe súmula do TST nem limite legal de 2 anos** — 24 meses é praxe de razoabilidade. Exigir limitação temporal E espacial cumulativas (STJ, REsp 1.203.109/MG e REsp 2.185.015/SC) e, em vínculo empregatício, compensação financeira. Teto de referência empresarial: 5 anos, por analogia ao CC art. 1.147 (trespasse). Ver §4 do SKILL.md.
 - **IP assignment**: cessão de PI desenvolvida para a startup
 - **Key-man clause**: operação condicionada à permanência de founders específicos
 - **Good leaver / Bad leaver**:

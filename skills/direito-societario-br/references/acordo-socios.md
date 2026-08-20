@@ -124,7 +124,7 @@ Quando sócios com participações iguais ou blocos com poder de veto não chega
 ### 6. Cláusulas Acessórias Essenciais
 
 - **Confidencialidade**: sobrevive ao término do acordo
-- **Non-compete e non-solicitation**: limitar a 2 anos (jurisprudência TST), área geográfica razoável, compensação financeira
+- **Non-compete e non-solicitation**: limitação temporal E espacial cumulativas, sob pena de invalidade (STJ, REsp 1.203.109/MG; REsp 2.185.015/SC), e compensação financeira quando houver vínculo empregatício. **Não há súmula do TST nem limite legal de 2 anos** — 24 meses é praxe de razoabilidade; em contexto empresarial (venda de participação), o teto de referência é 5 anos, por analogia ao CC art. 1.147. Fundamentar em CF art. 5º, XIII e art. 170, e CC arts. 421-422. Ver §4 do SKILL.md.
 - **Anticorrupção**: declarações + obrigações de compliance
 - **LGPD**: tratamento de dados de sócios e do acordo como documento confidencial
 - **Condição suspensiva / resolutiva**: se aplicável

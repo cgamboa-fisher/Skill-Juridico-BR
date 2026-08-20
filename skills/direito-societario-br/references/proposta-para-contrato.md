@@ -40,34 +40,41 @@ Ao receber a proposta (arquivo ou texto), extrair e mapear os seguintes campos:
 | Validade da proposta | Não migra (informativo) | — |
 | Condições especiais | Cláusulas específicas | Se existir |
 
-### Etapa 2: Identificação de Lacunas — ask_user_input
+### Etapa 2: Identificação de Lacunas — AskUserQuestion
+
+> **Ferramenta:** em Cowork e Claude Code, usar `AskUserQuestion` (máx. 4 perguntas por chamada,
+> 2-4 opções por pergunta, cada opção com `label` curto e `description`). Em ambiente sem a
+> ferramenta, fazer as perguntas em texto numerado. **Não existe ferramenta `ask_user_input`.**
+> Se a sessão for não assistida, adotar a opção mais conservadora e declarar a premissa no output.
 
 Após o mapeamento, identificar quais informações estão faltando na proposta e que são
-necessárias para o contrato. Usar `ask_user_input` para coletar.
+necessárias para o contrato. Usar `AskUserQuestion` para coletar.
 
 **Coleta obrigatória — sempre perguntar se não constar na proposta:**
 
 ```
-ask_user_input({
+AskUserQuestion({
   questions: [
     {
+      header: "Tipo de contrato",
       question: "Qual o tipo de contrato mais adequado?",
+      multiSelect: false,
       options: [
-        "Prestação de serviços",
-        "Fornecimento de produtos",
-        "Licenciamento de software/tecnologia",
-        "Serviço + Fornecimento (misto)"
-      ],
-      type: "single_select"
+        { label: "Prestação de serviços", description: "Obrigação de fazer — CC art. 593 e ss. Atenção ao risco de pejotização" },
+        { label: "Fornecimento", description: "Compra e venda de produtos com entrega continuada ou parcelada" },
+        { label: "Licenciamento", description: "Software ou tecnologia — Lei 9.609/98 e Lei 9.279/96" },
+        { label: "Misto", description: "Serviço + fornecimento — exige separar escopo, preço e responsabilidade de cada parcela" }
+      ]
     },
     {
+      header: "Sua posição",
       question: "Qual a posição do seu cliente neste contrato?",
+      multiSelect: false,
       options: [
-        "Contratante (quem paga)",
-        "Contratada (quem entrega)",
-        "Estou redigindo para ambas as partes"
-      ],
-      type: "single_select"
+        { label: "Contratante", description: "Quem paga — foco em SLA, garantias, propriedade dos entregáveis e saída" },
+        { label: "Contratada", description: "Quem entrega — foco em limitação de responsabilidade, escopo fechado e reajuste" },
+        { label: "Ambas as partes", description: "Minuta equilibrada, sem viés — declarar isso no documento" }
+      ]
     }
   ]
 })
@@ -77,37 +84,40 @@ ask_user_input({
 
 Para contratos de prestação de serviços:
 ```
-ask_user_input({
+AskUserQuestion({
   questions: [
     {
-      question: "Como deve funcionar a rescisão?",
+      header: "Rescisão",
+      question: "Como deve funcionar a rescisão imotivada?",
+      multiSelect: false,
       options: [
-        "Ambas as partes, com 30 dias de aviso",
-        "Ambas as partes, com 60 dias de aviso",
-        "Apenas por justa causa",
-        "Preciso definir caso a caso"
-      ],
-      type: "single_select"
+        { label: "Bilateral, aviso de 30 dias", description: "Padrão de mercado para serviços recorrentes" },
+        { label: "Bilateral, aviso de 60 dias", description: "Adequado quando há equipe alocada ou investimento inicial" },
+        { label: "Só por justa causa", description: "Vigência rígida — combinar com multa compensatória" },
+        { label: "Assimétrica", description: "Só uma das partes pode denunciar — dizer qual e prever compensação" }
+      ]
     },
     {
+      header: "Limite de resp.",
       question: "Qual o limite de responsabilidade desejado?",
+      multiSelect: false,
       options: [
-        "Limitado ao valor do contrato",
-        "Limitado a 12 meses de remuneração",
-        "Ilimitado para danos diretos",
-        "Preciso de orientação"
-      ],
-      type: "single_select"
+        { label: "Valor do contrato", description: "Teto no valor total pago ou a pagar" },
+        { label: "12 meses de remuneração", description: "Comum em contratos de prazo indeterminado" },
+        { label: "Sem teto para danos diretos", description: "Posição de contratante — exclui lucros cessantes" },
+        { label: "Preciso de orientação", description: "Apresentar as opções com prós e contras antes de decidir" }
+      ]
     },
     {
-      question: "Resolução de disputas?",
+      header: "Disputas",
+      question: "Como resolver disputas?",
+      multiSelect: false,
       options: [
-        "Foro judicial (comarca da sede do contratante)",
-        "Foro judicial (comarca da sede do contratada)",
-        "Arbitragem",
-        "Ainda não decidi"
-      ],
-      type: "single_select"
+        { label: "Foro da sede da contratante", description: "Judicial — mais barato, mais lento, público" },
+        { label: "Foro da sede da contratada", description: "Judicial — vantagem logística para quem entrega" },
+        { label: "Arbitragem", description: "Lei 9.307/96. Sigilosa e rápida, mas custo alto — inviável em contrato de baixo valor" },
+        { label: "Mediação e depois arbitragem", description: "Escalonada — tentativa de composição antes do procedimento" }
+      ]
     }
   ]
 })
@@ -115,26 +125,29 @@ ask_user_input({
 
 Para contratos com componente de tecnologia/software:
 ```
-ask_user_input({
+AskUserQuestion({
   questions: [
     {
+      header: "Titularidade da PI",
       question: "Quem detém a propriedade intelectual do que será desenvolvido?",
+      multiSelect: false,
       options: [
-        "Contratante (work for hire)",
-        "Contratada (licenciado ao contratante)",
-        "Compartilhada",
-        "Preciso definir caso a caso"
-      ],
-      type: "single_select"
+        { label: "Contratante", description: "Cessão total e definitiva — exige cláusula expressa de cessão (Lei 9.610/98, art. 49)" },
+        { label: "Contratada, com licença", description: "Titularidade fica com quem desenvolve; contratante recebe licença de uso — definir escopo, prazo e exclusividade" },
+        { label: "Compartilhada", description: "Cotitularidade — definir regras de exploração, sublicenciamento e receita" },
+        { label: "Depende do entregável", description: "Separar background IP (preexistente) de foreground IP (desenvolvido no projeto)" }
+      ]
     },
     {
+      header: "Dados pessoais",
       question: "Haverá tratamento de dados pessoais?",
+      multiSelect: false,
       options: [
-        "Sim — incluir cláusulas LGPD completas",
-        "Possivelmente — incluir cláusula genérica",
-        "Não — dados exclusivamente empresariais"
-      ],
-      type: "single_select"
+        { label: "Sim, incluir DPA completo", description: "Definir controlador/operador, bases legais, incidentes, suboperadores, eliminação" },
+        { label: "Sim, com transf. internacional", description: "Obrigatório adotar as cláusulas-padrão da Resolução CD/ANPD 19/2024" },
+        { label: "Possivelmente", description: "Incluir cláusula LGPD de contingência e obrigação de comunicar se passar a haver tratamento" },
+        { label: "Não", description: "Apenas dados de pessoa jurídica — manter cláusula mínima de confidencialidade" }
+      ]
     }
   ]
 })
@@ -142,27 +155,48 @@ ask_user_input({
 
 Para contratos de fornecimento:
 ```
-ask_user_input({
+AskUserQuestion({
   questions: [
     {
-      question: "Como funciona a aceitação dos produtos/entregas?",
+      header: "Aceite",
+      question: "Como funciona o aceite dos produtos ou entregas?",
+      multiSelect: false,
       options: [
-        "Aceite automático após entrega",
-        "Prazo de inspeção (7 dias)",
-        "Prazo de inspeção (30 dias)",
-        "Aceite formal por escrito"
-      ],
-      type: "single_select"
+        { label: "Automático na entrega", description: "Favorece a contratada — sem janela de recusa" },
+        { label: "Inspeção em 7 dias", description: "Aceite tácito se não houver recusa fundamentada no prazo" },
+        { label: "Inspeção em 30 dias", description: "Adequado a entregáveis complexos ou que exijam homologação" },
+        { label: "Aceite formal por escrito", description: "Termo de aceite assinado — favorece a contratante, mas travar prazo para evitar aceite indefinido" }
+      ]
     },
     {
-      question: "Há garantia sobre os produtos/serviços?",
+      header: "Garantia",
+      question: "Qual o regime de garantia?",
+      multiSelect: false,
       options: [
-        "Garantia legal (CDC — 90 dias)",
-        "Garantia estendida (6 meses)",
-        "Garantia estendida (12 meses)",
-        "Sem garantia adicional"
-      ],
-      type: "single_select"
+        { label: "Legal apenas", description: "Vício redibitório do CC arts. 441-446; CDC só se houver relação de consumo" },
+        { label: "Estendida — 6 meses", description: "Correção de defeitos sem custo no período" },
+        { label: "Estendida — 12 meses", description: "Padrão em software e equipamentos" },
+        { label: "Sem garantia adicional", description: "Só a legal — sinalizar como ponto de risco para a contratante" }
+      ]
+    }
+  ]
+})
+```
+
+Para qualquer contrato com preço e vigência superior a 12 meses (reforma tributária):
+```
+AskUserQuestion({
+  questions: [
+    {
+      header: "Preço e tributos",
+      question: "Como o preço deve tratar os tributos sobre o consumo (IBS/CBS) na transição até 2033?",
+      multiSelect: false,
+      options: [
+        { label: "Preço líquido de tributos", description: "Tributos destacados em nota e acrescidos ao preço — repasse integral à contratante" },
+        { label: "Preço com tributos inclusos", description: "Contratada absorve; prever renegociação se a carga variar acima de um gatilho" },
+        { label: "Repasse com gatilho", description: "Ajuste automático quando a variação de carga exceder percentual definido" },
+        { label: "Preciso de orientação", description: "Explicar o risco da transição 2026-2033 antes de decidir — ver references/tributacao-contratos.md" }
+      ]
     }
   ]
 })
@@ -225,19 +259,19 @@ CLÁUSULA 7ª — CONFIDENCIALIDADE
 [Cláusula padrão — CC art. 422, boa-fé objetiva]
 
 CLÁUSULA 8ª — PROPRIEDADE INTELECTUAL
-[Conforme resposta do ask_user_input]
+[Conforme resposta do AskUserQuestion]
 
 CLÁUSULA 9ª — PROTEÇÃO DE DADOS — LGPD
 [Se aplicável — conforme references/compliance-governanca.md]
 
 CLÁUSULA 10ª — LIMITAÇÃO DE RESPONSABILIDADE
-[Conforme resposta do ask_user_input]
+[Conforme resposta do AskUserQuestion]
 10.1. Exclusão de danos indiretos, lucros cessantes e danos morais
 10.2. Cap: [valor do contrato / 12 meses de remuneração]
 10.3. Exceções ao cap: dolo, fraude, violação de confidencialidade, PI, LGPD
 
 CLÁUSULA 11ª — RESCISÃO
-[Conforme resposta do ask_user_input]
+[Conforme resposta do AskUserQuestion]
 11.1. Rescisão imotivada: mediante aviso prévio de [30/60] dias
 11.2. Rescisão por justa causa: inadimplemento não sanado em [15] dias após notificação
 11.3. Efeitos: pagamento dos serviços prestados até a data, devolução de materiais
@@ -254,7 +288,7 @@ CLÁUSULA 13ª — DISPOSIÇÕES GERAIS
 13.6. Comunicações: por escrito, aos endereços das Partes
 
 CLÁUSULA 14ª — RESOLUÇÃO DE DISPUTAS
-[Conforme resposta do ask_user_input — foro ou arbitragem]
+[Conforme resposta do AskUserQuestion — foro ou arbitragem]
 
 E, por estarem justas e contratadas, as Partes assinam o presente
 instrumento em 2 (duas) vias de igual teor e forma, na presença de
