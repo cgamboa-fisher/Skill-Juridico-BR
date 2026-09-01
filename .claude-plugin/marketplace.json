@@ -1,0 +1,14 @@
+{
+  "name": "skill-juridico-br",
+  "description": "Marketplace pessoal para os skills de direito brasileiro (societário, empresarial e de família).",
+  "owner": {
+    "name": "Carlos Gamboa"
+  },
+  "plugins": [
+    {
+      "name": "direito-societario-br",
+      "source": ".",
+      "description": "Direito societário, empresarial e de família sob a legislação brasileira, com calibração de escopo por capacidade do modelo."
+    }
+  ]
+}
