@@ -1,5 +1,90 @@
 # Changelog
 
+## [0.3.0] — 2026-08-31
+
+Endurecimento do workflow de tracked changes, a partir de uma revisão real de acordo de investimento em que
+a geração do `.docx` marcado exigiu sete rodadas de correção. Os defeitos encontrados não eram cobertos pela
+0.2.0, e nenhum deles era pego pelas checagens que a skill recomendava.
+
+### 🔴 Correções de conteúdo
+
+| # | O que faltava | Correção |
+|---|---|---|
+| 1 | A skill tratava marca de fim de parágrafo excluída como exclusão do parágrafo | **`<w:del/>` em `<w:pPr><w:rPr>` significa FUNDIR com o seguinte**, e o parágrafo resultante herda o `pPr` do seguinte — inclusive a numeração. Tratar como exclusão apaga texto do contrato em silêncio. Documentado em §1 da referência e implementado em `merge_mark_deleted()` |
+| 2 | Nada sobre ordem de elementos — só sobre aninhamento | `CT_PPr` tem ordem obrigatória; `<w:rPr>` vem depois de `pStyle`/`numPr`/`spacing`/`ind`. Violar isso faz o Word recusar o arquivo com a mensagem enganosa **"An incorrect text node was used"**, que aponta para nó de texto quando o problema é ordem. Nova §3 e `CT_PPR_ORDER` |
+| 3 | Regra "usar parser real" sem dizer onde o regex quebra | `w:pPr` e `w:rPr` **se auto-aninham** (via `pPrChange`/`rPrChange`): regex não-guloso fecha no interno e corrompe o XML. Nova §2 e `outer_element()` com contagem de profundidade |
+| 4 | Nada sobre posicionamento de inserções | Três armadilhas documentadas em §4: inserir dentro de cadeia de fusão faz o parágrafo novo absorver o anterior; inserções na mesma âncora se invertem; clonar `pPr` herda o `ilvl` e renumera o documento, quebrando remissões internas |
+| 5 | Checklist parava em "arquivo abre sem aviso de reparo" | **Escada de validação de 5 degraus** (§5), com o que cada degrau pega e o que deixa passar. Comprovado por teste negativo: `ilvl` errado passa nos degraus 1 a 4 e só aparece no 5 |
+| 6 | Nenhuma metodologia de comparação | O baseline correto é **`aceitar-tudo(original)`**, não o original cru: o documento recebido já traz revisões pendentes de outro autor, e compará-lo cru atribui esse deslocamento a você. Num caso real gerou 13 falsas renumerações. `Document.baseline_clean()` |
+
+### 🟠 Novo
+
+- **`scripts/ooxml_redline.py`** — biblioteca em stdlib puro para marcas de revisão. `Document` com
+  `edit/append/insert_after/insert_before/delete_para/new_para`, simulação de aceitar/rejeitar
+  (`unwrap`, `merge_mark_deleted`, `build_clean`), e os validadores da escada (`validate`,
+  `check_ppr_order`, `check_reject_restores_original`, `open_with_libreoffice`).
+  Testada contra o caso real: reproduz o resultado correto em uma execução, com 0 cláusulas renumeradas,
+  0 perdidas e exatamente as 6 novas esperadas.
+- **§6 "Validar o validador"** — um validador que passa não prova nada se você não sabe o que ele não cobre.
+  Inclui a exigência de teste negativo quando o validador for novo ou alterado.
+- **Regra de Ouro 13** — nunca entregar `.docx` gerado sem tê-lo aberto. XML bem-formado não é evidência de
+  que o Word aceita o arquivo. Sem LibreOffice disponível, declarar que a abertura não foi verificada.
+
+### 🟢 `direito-familia-br` incorporado ao plugin
+
+O skill irmão vivia solto em `~/.claude/skills/`, sem versionamento e sem backup, parado no estado
+pré-0.2.0. Passa a ser o segundo skill deste plugin, com o material de tracked changes compartilhado.
+
+| # | Problema | Correção |
+|---|---|---|
+| 7 | Chamava **`ask_user_input`** — ferramenta inexistente — em 5 pontos, com schema errado (`type: "single_select"`, `options` como strings) e blocos com até 6 opções | Reescrito para **`AskUserQuestion`** com o schema correto (`header`, `multiSelect`, `options[].label`/`.description`), respeitando o limite de 4 opções por pergunta, mais as regras de uso e o comportamento em sessão não assistida |
+| 8 | **Nenhuma orientação sobre tracked changes**, embora minutas de divórcio, pactos antenupciais e planos parentais exijam marcas de revisão | Novo §4.6 apontando para o material compartilhado, com o gate de tier FULL e as especificidades de família: escritura pública minutada pelo cartório, dados sensíveis expostos no painel de revisões, conferência dupla de valores em cláusula de alimentos |
+| 9 | Sem regra sobre validação de `.docx` gerado | Regra de Ouro 13, espelhando a 13 do skill irmão |
+
+### 🔴 Verificação de vigência em `direito-familia-br` (fontes oficiais, 01/09/2026)
+
+O skill não tinha seção de vigência e carregava **dois erros materiais** — afirmações que levariam
+a orientação jurídica errada, não apenas imprecisa.
+
+| # | O que estava errado | Correção | Fonte |
+|---|---|---|---|
+| 10 | "Filhos menores: divórcio extrajudicial é **nulo** — sempre via judicial" (Regra de Ouro 7, mais 🔴 CRÍTICO, mais um reference) | A **Res. CNJ 571/2024** (DOU 02/09/2024) deu nova redação ao **art. 34, § 2º da Res. CNJ 35/2007**: havendo filhos menores ou incapazes, a escritura é permitida **desde que comprovada a prévia resolução judicial** de guarda, visitação e alimentos, o que deve constar do corpo da escritura | Res. CNJ 571/2024 |
+| 11 | "Pensão **jamais** indexada ao salário mínimo (inconstitucional — CF art. 7º, IV)" (Regra de Ouro 6, mais 🔴 CRÍTICO, mais um reference) | **Errado.** STF, **ARE 842.157, Tema 821** de repercussão geral: "a utilização do salário mínimo como base de cálculo do valor de pensão alimentícia não viola a Constituição Federal". A vedação do art. 7º, IV alcança obrigações **sem** caráter alimentar | STF, Tema 821 |
+| 12 | Súmula 377/STF citada como "muito relevante na prática", sem ressalva, sugerindo meação automática | **Releitura pelo STJ**: a Segunda Seção, no **EREsp 1.623.858/MG**, exige **prova do esforço comum**. Não há presunção — em separação obrigatória o cônjuge não tem direito automático à metade dos aquestos | STJ, EREsp 1.623.858/MG |
+| 13 | "Lei 12.318/10 — Alienação parental", sem as alterações | **Lei 14.340/2022**: revogou o art. 6º, VII (suspensão do poder familiar exige ação própria, não cabe nos autos da alienação); visitação assistida no fórum ou entidade conveniada; oitiva da criança obrigatória na forma da Lei 13.431/2017, sob pena de nulidade | Lei 14.340/2022 |
+| 14 | "Lei 14.713/23 — Critérios para guarda compartilhada (alterações ao CC)", vago | Precisado: alterou o **CC art. 1.584, § 2º** — a compartilhada é afastada havendo elementos que evidenciem probabilidade de risco de violência doméstica ou familiar | Lei 14.713/2023 |
+
+**Novo:** seção **"Verificação de Vigência Legislativa — REGRA ANTIFRAGILIDADE"** e
+`references/atualizacoes-legislativas.md`, com as armadilhas acima, a rotina de reverificação
+(CNJ primeiro — é a camada que mais se move) e o registro do **PL 4/2025** como *em tramitação*,
+com alerta explícito contra os artigos de "Nova Lei do Divórcio 2026" / "Nova Lei da Pensão 2026"
+que apresentam o projeto como direito posto. Tabela de legislação passou a trazer a data da
+verificação e as três referências jurisprudenciais.
+
+### Estrutura
+
+Material comum movido para **`shared/`** na raiz do plugin — `ooxml_redline.py` e
+`revisao-docx-tracked-changes.md` —, referenciado por ambos os skills como `../../shared/`.
+Corrigir sempre no compartilhado; não duplicar.
+
+`plugin.json` mantém `name: direito-societario-br` para preservar a identidade no marketplace
+"My Uploads" (renomear criaria um plugin novo no reenvio); `description` e `keywords` atualizados
+para refletir os dois skills.
+
+> **Ação necessária:** este plugin é instalado por upload. As mudanças só entram em vigor após
+> reenviar o pacote. Enquanto isso, `~/.claude/skills/direito-familia-br` é um symlink para
+> `skills/direito-familia-br` deste repo, para o skill continuar disponível e atualizado.
+> Remover o symlink depois do reenvio.
+
+### Arquivos
+
+`shared/revisao-docx-tracked-changes.md` reescrito (3,6 KB → ~13 KB) e movido de
+`skills/direito-societario-br/references/`; `shared/ooxml_redline.py` criado;
+`skills/direito-societario-br/SKILL.md` §0.3, §8.9 e §10 atualizados;
+`skills/direito-familia-br/` incorporado, com §"Interação com o Usuário", §4.6 e Regra de Ouro 13.
+
+---
+
 ## [0.2.0] — 2026-08-20
 
 Revisão completa. Vigência legislativa verificada contra fontes oficiais em 20/08/2026.

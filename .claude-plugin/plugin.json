@@ -1,7 +1,7 @@
 {
   "name": "direito-societario-br",
-  "version": "0.2.0",
-  "description": "Análise, elaboração e revisão de contratos e documentos jurídicos sob a legislação societária e empresarial brasileira, com calibração de escopo por capacidade do modelo.",
+  "version": "0.3.0",
+  "description": "Direito societário, empresarial e de família sob a legislação brasileira: análise, elaboração e revisão de contratos e documentos, com calibração de escopo por capacidade do modelo. Inclui os skills direito-societario-br e direito-familia-br e a biblioteca compartilhada de marcas de revisão em .docx.",
   "author": {
     "name": "Carlos Gamboa"
   },
@@ -18,6 +18,13 @@
     "compliance",
     "lgpd",
     "legal",
-    "portuguese"
+    "portuguese",
+    "direito-familia",
+    "divorcio",
+    "partilha",
+    "pensao-alimenticia",
+    "tracked-changes",
+    "ooxml",
+    "docx"
   ]
 }

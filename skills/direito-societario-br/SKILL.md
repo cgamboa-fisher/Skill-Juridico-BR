@@ -60,7 +60,7 @@ oferecer as alternativas.
 
 | Tarefa | Tier mínimo | Risco de executar abaixo do tier |
 |---|---|---|
-| Manipulação de `document.xml` para tracked changes | FULL | Corrupção silenciosa do .docx (`<w:t>` dentro de `<w:del>`); o usuário recebe arquivo que não abre ou que perde texto ao aceitar revisões |
+| Manipulação de `document.xml` para tracked changes | FULL | Três falhas silenciosas: (a) arquivo que o Word recusa (ordem de elementos no `CT_PPr`, `<w:t>` dentro de `<w:del>`); (b) **perda de texto do contrato**, por tratar marca de fim de parágrafo excluída como exclusão em vez de fusão; (c) **renumeração automática** que quebra as remissões cruzadas do próprio contrato |
 | Due diligence multi-área (≥4 áreas) em passe único | FULL | Cobertura aparente sem profundidade — achados genéricos apresentados como DD completa |
 | Redline com fallback negocial | STANDARD | Redline juridicamente incorreto levado à mesa de negociação |
 | Minuta de contrato completo (>20 cláusulas) | STANDARD | Cláusulas internamente contraditórias, remissões cruzadas quebradas |
@@ -386,9 +386,18 @@ checklist de validação.
 IBS/CBS/IS e a transição 2026-2033; cláusulas de preço, reajuste, gross-up e repasse; ITBI em
 operações societárias; ganho de capital na alienação de participação; ágio.
 
-### 8.9 — Revisão de .docx com marcas de revisão → `references/revisao-docx-tracked-changes.md`
-Workflow de tracked changes em OOXML, erros que corrompem o arquivo, checklist de entrega.
+### 8.9 — Revisão de .docx com marcas de revisão → `../../shared/revisao-docx-tracked-changes.md`
+Semântica das marcas (marca de fim de parágrafo = fusão, não exclusão), ordem de elementos no `CT_PPr`,
+armadilhas de posicionamento de inserções, escada de validação em 5 degraus e metodologia de baseline.
 **Tier FULL obrigatório.**
+
+Material compartilhado com o skill irmão `direito-familia-br`: fica em `shared/`, na raiz do plugin
+(dois níveis acima do diretório deste skill). Não duplicar — corrigir sempre no compartilhado.
+
+Usar a biblioteca **`../../shared/ooxml_redline.py`** (stdlib puro) em vez de reescrever regex a cada documento:
+`Document.open/edit/append/insert_after/insert_before/delete_para/save_marked/save_clean/baseline_clean`
+e `validate()`, que roda a escada completa. Ler a referência antes: a biblioteca resolve a sintaxe, mas as
+decisões de onde inserir e em que nível de numeração continuam sendo do analista.
 
 ### 8.10 — Registro de atualizações legislativas → `references/atualizacoes-legislativas.md`
 O que mudou, quando, e qual citação está errada em material antigo.
@@ -449,6 +458,10 @@ Não usar em tier MÍNIMO.
     Comercial: assinatura qualificada (ICP-Brasil) ou avançada, inclusive gov.br
     (IN DREI 81/2020, alterada pelas IN DREI 112/2022 e 88/2022).
 12. **Declarar o tier de execução** no output (§0.4).
+13. **Nunca entregar um `.docx` gerado sem tê-lo aberto.** XML bem-formado não é evidência de que o Word
+    aceita o arquivo, nem de que o conteúdo sobreviveu. Abrir de fato (LibreOffice headless serve) e
+    conferir a numeração contra o baseline — ou declarar explicitamente que a abertura não foi verificada.
+    Ver §8.9.
 
 ---
 
