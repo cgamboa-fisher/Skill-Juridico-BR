@@ -1,5 +1,50 @@
 # Changelog
 
+## [0.3.1] — 2026-09-02
+
+Duas classes de defeito que fazem o **Word recusar o arquivo** e que o **LibreOffice abre sem uma
+reclamação**. Ambas ocorreram no mesmo documento, no mesmo dia, e ambas passaram nos cinco degraus da
+escada 0.3.0 — o degrau 5 dava verde enquanto o Word exibia *"An incorrect text node was used"*.
+
+A lição de fundo: o degrau 5 responde *"o LibreOffice abriu"*, não *"o Word abre"*. Defeito que o
+LibreOffice tolera precisa de checagem estática própria, senão não é pego por ninguém.
+
+### 🔴 Correções
+
+| # | O que faltava | Correção |
+|---|---|---|
+| 1 | O degrau 2 checava **um** par de nó de texto | São **dois**: `w:t`→`w:delText` **e** `w:instrText`→`w:delInstrText`. O segundo escapava de toda a escada — o degrau 4 compara só texto *visível*, e código de campo não é visível; o degrau extra confere a *contagem* de `w:instrText`, que não muda, porque o elemento não some, só fica com o nome errado. Um único caso derrubou uma entrega. `check_text_nodes()` reescrito |
+| 2 | Nada validava ids de parágrafo e de comentário | `w14:paraId`, `w14:textId`, `w15:paraId`, `w16cid:paraId` e `w16cid:durableId` são `ST_LongHexNumber`: **8 dígitos hex, sem exceção**. Um prefixo mnemônico plausível como `ACME0384` (o `M` não é hex) faz o Word recusar o pacote inteiro. Novo degrau **2b**, `check_hex_ids()` |
+| 3 | Helpers de comentário e de exclusão aninhada viviam fora do repo | Eram reescritos do zero a cada sessão, reintroduzindo os mesmos bugs. Promovidos a `shared/ooxml_comments.py` e `shared/ooxml_nested_redline.py` |
+
+### 🟠 Novo
+
+- **`check_hex_ids(docx_path)`** — varre o **pacote**, não só o `document.xml`: os ids de comentário vivem
+  em `comments.xml`, `commentsExtended.xml` e `commentsIds.xml`, e quebram igual. Por isso `validate()`
+  ganhou o parâmetro `marked_path`; sem ele o degrau 2b não roda e o resultado diz isso em voz alta.
+- **`hex_id(n)`** — gerador de id no formato correto. Prefixos mnemônicos que sobrevivem: `C0DE`, `DEAD`,
+  `FADA`, `B0A`.
+- **`shared/ooxml_comments.py`** — `Commenter`, a API de comentários que a `ooxml_redline` não tem (ela só
+  sabe removê-los em `save_clean`). Anexa a `comments.xml`, `commentsExtended.xml`, `commentsIds.xml` e
+  `people.xml`.
+- **`shared/ooxml_nested_redline.py`** — `delete_inside_foreign_ins()`, para excluir texto dentro de uma
+  `<w:ins>` de outro autor. Agora **recusa** âncora em parágrafo com `fldChar`/`instrText`, em vez de
+  produzir markup quebrado em silêncio.
+
+### 🟢 Documentação
+
+- §5 reescrita: tabela da escada com o degrau 2b, subseção **"Degrau 2 — são DOIS pares, não um"**, e uma
+  ressalva explícita de que o LibreOffice é permissivo demais para ser o teste final. Sintoma diagnóstico
+  registrado: **abre no LibreOffice e não no Word ⇒ comece por 2 e 2b**.
+- §7 ganhou as duas linhas novas na tabela de erros recorrentes.
+
+### 🔵 Validar o validador
+
+O `check_hex_ids` foi rodado contra um `.docx` intocado **antes** de ser aceito, como manda a §6 — e acusou
+17 problemas num arquivo limpo. Causa: `w16cid:durableId` é hex em `commentsIds.xml`, mas **decimal** em
+`numbering.xml`, onde o próprio Word escreve `durableId="790586536"`. O check passou a considerar a parte,
+não só o nome do atributo. Teste negativo final: 0 no original, 0 no corrigido, 16 no defeituoso.
+
 ## [0.3.0] — 2026-08-31
 
 Endurecimento do workflow de tracked changes, a partir de uma revisão real de acordo de investimento em que

@@ -40,8 +40,8 @@ __all__ = [
     'outer_element', 'next_rev_id', 'visible_text',
     'unwrap', 'merge_mark_deleted', 'build_clean',
     'check_wellformed', 'check_text_nodes', 'check_ppr_order', 'check_dup_ids',
-    'check_reject_restores_original', 'open_with_libreoffice', 'validate',
-    'CT_PPR_ORDER',
+    'check_hex_ids', 'check_reject_restores_original', 'open_with_libreoffice', 'validate',
+    'hex_id', 'CT_PPR_ORDER', 'HEX8_ATTRS',
 ]
 
 
@@ -551,11 +551,19 @@ def check_wellformed(xml: str) -> list[str]:
 
 
 def check_text_nodes(xml: str) -> list[str]:
-    """Degrau 2 — `w:t` nunca dentro de `w:del`; `w:delText` sempre dentro.
+    """Degrau 2 — nós de texto na forma certa para o contexto de revisão.
+
+    São DOIS pares, não um. Dentro de `w:del` o texto corrido vira `w:delText` **e** o
+    código de campo vira `w:delInstrText`. Esquecer o segundo par é o defeito que o Word
+    reporta como "An incorrect text node was used" e que passa despercebido: o degrau 4
+    compara só texto visível, e código de campo não é visível.
 
     Faz varredura com pilha: contar com regex dá falso positivo em `<w:del/>`
     auto-fechado (marca de parágrafo), que é válido.
     """
+    pares = {'w:t': 'w:delText', 'w:instrText': 'w:delInstrText'}
+    dentro = {v: k for k, v in pares.items()}
+
     problems, stack = [], []
     for m in re.finditer(r'<(/?)(w:[A-Za-z0-9]+)([^>]*?)(/?)>', xml):
         closing, name, attrs, selfclose = m.groups()
@@ -565,10 +573,13 @@ def check_text_nodes(xml: str) -> list[str]:
             if stack and stack[-1] == name:
                 stack.pop()
             continue
-        if name == 'w:t' and 'w:del' in stack:
-            problems.append(f'<w:t> dentro de <w:del> na posição {m.start()} (use <w:delText>)')
-        if name == 'w:delText' and 'w:del' not in stack:
-            problems.append(f'<w:delText> fora de <w:del> na posição {m.start()}')
+        em_del = 'w:del' in stack
+        if name in pares and em_del:
+            problems.append(f'<{name}> dentro de <w:del> na posição {m.start()} '
+                            f'(use <{pares[name]}>)')
+        if name in dentro and not em_del:
+            problems.append(f'<{name}> fora de <w:del> na posição {m.start()} '
+                            f'(use <{dentro[name]}>)')
         stack.append(name)
     return problems
 
@@ -598,6 +609,54 @@ def check_ppr_order(xml: str) -> list[str]:
                 break
             last = k
         i = span[1]
+
+
+# Atributo -> partes onde ele é ST_LongHexNumber. `None` = em qualquer parte.
+# `w16cid:durableId` é a pegadinha: hex em `commentsIds.xml`, mas DECIMAL em
+# `numbering.xml` — o próprio Word escreve `w16cid:durableId="790586536"` lá. Checar
+# pelo nome do atributo, sem olhar a parte, dá 17 falsos positivos num .docx intocado.
+HEX8_ATTRS = {
+    'w14:paraId': None,
+    'w14:textId': None,
+    'w15:paraId': None,
+    'w16cid:paraId': None,
+    'w16cid:durableId': ('word/commentsIds.xml',),
+}
+
+
+def hex_id(n: int) -> str:
+    """Id no formato `ST_LongHexNumber`: 8 dígitos hex. Use SEMPRE isto para gerar ids.
+
+    Prefixo mnemônico é a armadilha: `ACME0384` parece um id e não é — `M` não é dígito
+    hexadecimal. Prefixos que sobrevivem: `C0DE`, `DEAD`, `FADA`, `B0A`.
+    """
+    return f'{n & 0xFFFFFFFF:08X}'
+
+
+def check_hex_ids(docx_path: str) -> list[str]:
+    """Ids de parágrafo/comentário em `ST_LongHexNumber` — 8 dígitos hex, sem exceção.
+
+    Vale para o PACOTE inteiro, não só o `document.xml`: `comments.xml`,
+    `commentsExtended.xml` e `commentsIds.xml` carregam os mesmos ids e quebram igual.
+
+    Um valor fora do padrão faz o Word recusar o arquivo inteiro; o LibreOffice abre sem
+    reclamar, então o degrau 5 NÃO pega isto. Custou uma entrega em 01.09.2026.
+    """
+    problems = []
+    with zipfile.ZipFile(docx_path) as z:
+        for name in z.namelist():
+            if not name.endswith('.xml'):
+                continue
+            xml = z.read(name).decode('utf-8', errors='replace')
+            for attr, partes in HEX8_ATTRS.items():
+                if partes is not None and name not in partes:
+                    continue
+                for m in re.finditer(re.escape(attr) + r'="([^"]*)"', xml):
+                    if not re.fullmatch(r'[0-9A-Fa-f]{8}', m.group(1)):
+                        problems.append(
+                            f'{name}: {attr}="{m.group(1)}" não é ST_LongHexNumber '
+                            f'(8 dígitos hex) — o Word recusa o arquivo')
+    return problems
 
 
 def check_dup_ids(xml: str, original_xml: str) -> list[str]:
@@ -680,14 +739,22 @@ def diff_numbering(baseline_text: str, marked_text: str) -> dict:
 
 
 def validate(doc: 'Document', clean_path: str | None = None,
-             baseline_path: str | None = None) -> dict:
+             baseline_path: str | None = None,
+             marked_path: str | None = None) -> dict:
     """Roda a escada completa. Retorna {degrau: [problemas]} — tudo vazio significa OK.
 
     Os degraus 1-4 rodam sempre. O degrau 5 depende do LibreOffice e dos dois .docx.
+
+    `marked_path` habilita o degrau 2b (ids hex), que precisa do PACOTE, não só do
+    `document.xml` — os ids de comentário vivem em outras partes. Passe sempre o caminho
+    do `- Comentado.docx` recém-gravado; sem ele o degrau 2b não roda e o resultado avisa.
     """
     result = {
         '1_wellformed': check_wellformed(doc.xml),
         '2_text_nodes': check_text_nodes(doc.xml),
+        '2b_hex_ids': (check_hex_ids(marked_path) if marked_path else
+                       ['não executado — passe marked_path (o .docx gravado); '
+                        'o LibreOffice não pega esta classe de defeito']),
         '3_ppr_order': check_ppr_order(doc.xml),
         '3b_dup_ids': check_dup_ids(doc.xml, doc.original_xml),
         '4_reject_restores': check_reject_restores_original(
