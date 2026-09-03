@@ -8,27 +8,23 @@ builders e profissionais que lidam com contratos comerciais no Brasil.
 > consulta a advogado habilitado na OAB. Toda análise gerada deve ser revisada por profissional
 > qualificado antes de uso em operação real.
 
-**Versão 0.2.0** · Legislação verificada contra fontes oficiais em **20/08/2026**.
+**Versão 0.3.1** · Legislação verificada contra fontes oficiais em **20/08/2026**.
 
 ---
 
-## O que mudou na 0.2.0
+## O que a skill faz
 
-Esta versão corrige erros jurídicos materiais da 0.1.0 e adiciona calibração por modelo.
-Ver `CHANGELOG.md` para a lista completa. Em resumo:
+Três frentes, em ordem de uso:
 
-- **Calibração de execução por tier de modelo** (FULL / STANDARD / MÍNIMO), com gates que
-  bloqueiam tarefas de alto risco em modelos que não as sustentam, e declaração de procedência
-  em todo output.
-- **Nove correções de fundamento legal** — EIRELI extinta, quóruns de LTDA pós-Lei 14.451/2022,
-  fundamentação real do non-compete, artigos do investidor-anjo, Decreto 13.609/43 revogado,
-  escopo da Lei 14.063/2020, ANPD como Agência, cláusulas-padrão de transferência internacional,
-  Decreto 8.420/2015 revogado.
-- **Reforma tributária do consumo** — nova referência sobre IBS/CBS em cláusulas de preço.
-- **Correção da ferramenta de interação** — a 0.1.0 instruía o modelo a chamar `ask_user_input`,
-  que não existe. Agora usa `AskUserQuestion`, com formato correto e fallback em texto.
-- **Link morto corrigido** — o workflow de tracked changes remetia a um `CLAUDE.md` inexistente
-  no repositório; agora é uma referência própria.
+- **Analisar e revisar** contratos e documentos societários, cláusula a cláusula, sempre a partir
+  de uma posição declarada — você diz de que lado está, e a análise é calibrada a isso.
+- **Redigir** minutas, acordos e conversões de proposta comercial em contrato.
+- **Devolver a revisão em `.docx` com marcas de revisão**, no formato que o outro escritório
+  espera receber e abrir no Word.
+
+Há também um skill companheiro de **Direito de Família** — ver abaixo.
+
+Histórico de versões em [`CHANGELOG.md`](CHANGELOG.md).
 
 ---
 
@@ -88,23 +84,36 @@ real. Os tiers inferiores existem para degradar com honestidade, não como equiv
 ## Estrutura
 
 ```
-direito-societario-br/
+Skill-Juridico-BR/
 ├── .claude-plugin/
 │   └── plugin.json
+├── shared/                                 # tracked changes — usado pelos dois skills
+│   ├── ooxml_redline.py                    # aplica as marcas e roda a validação
+│   ├── ooxml_comments.py                   # comentários do Word
+│   ├── ooxml_nested_redline.py             # excluir dentro de inserção de outro autor
+│   └── revisao-docx-tracked-changes.md     # o workflow e as armadilhas
 ├── skills/
-│   └── direito-societario-br/
+│   ├── direito-societario-br/
+│   │   ├── SKILL.md
+│   │   └── references/
+│   │       ├── atualizacoes-legislativas.md
+│   │       ├── tributacao-contratos.md
+│   │       ├── constituicao-societaria.md
+│   │       ├── acordo-socios.md
+│   │       ├── ma-operations.md
+│   │       ├── vc-startups.md
+│   │       ├── compliance-governanca.md
+│   │       ├── contratos-empresariais.md
+│   │       └── proposta-para-contrato.md
+│   └── direito-familia-br/
 │       ├── SKILL.md
 │       └── references/
-│           ├── atualizacoes-legislativas.md      # ⭐ novo — registro de vigência
-│           ├── tributacao-contratos.md           # ⭐ novo — IBS/CBS em cláusulas
-│           ├── revisao-docx-tracked-changes.md   # ⭐ novo — corrige link morto
-│           ├── constituicao-societaria.md
-│           ├── acordo-socios.md
-│           ├── ma-operations.md
-│           ├── vc-startups.md
-│           ├── compliance-governanca.md
-│           ├── contratos-empresariais.md
-│           └── proposta-para-contrato.md
+│           ├── atualizacoes-legislativas.md
+│           ├── divorcio-procedimento-documentos.md
+│           ├── regimes-bens-partilha.md
+│           ├── pensao-alimenticia.md
+│           ├── guarda-protecao-criancas.md
+│           └── interface-societario.md
 ├── CHANGELOG.md
 └── README.md
 ```
@@ -115,7 +124,6 @@ direito-societario-br/
 |---|---|
 | `atualizacoes-legislativas.md` | Tabela de correções obrigatórias: o que material antigo afirma de errado e qual é a citação correta, com fonte. Consultar antes de fundamentar recomendação de alto impacto |
 | `tributacao-contratos.md` | IBS/CBS/IS e a transição 2026-2033. Checklist de cláusula de preço, modelo de núcleo de cláusula tributária, ITBI, ganho de capital, ágio, Tema 1.226 do STJ sobre stock options |
-| `revisao-docx-tracked-changes.md` | Workflow de OOXML, tabela de erros que corrompem o `.docx` silenciosamente, checklist de entrega. Tier FULL obrigatório |
 | `constituicao-societaria.md` | LTDA, S.A., SLU, SCP, SPE, consórcio. Quóruns atualizados pela Lei 14.451/2022 |
 | `acordo-socios.md` | Governança, matérias reservadas, ROFR/ROFO, tag e drag along, deadlock, apuração de haveres |
 | `ma-operations.md` | Share vs. asset deal, cinco fases, DD em 8 áreas, reps & warranties, mecanismos de preço, MAC |
@@ -123,6 +131,25 @@ direito-societario-br/
 | `compliance-governanca.md` | LGPD e DPA, Resolução CD/ANPD 19/2024, anticorrupção, programa de integridade, ESG |
 | `contratos-empresariais.md` | Joint venture, franquia, licenciamento, representação comercial, serviços, SLA, NDA |
 | `proposta-para-contrato.md` | Conversão proposta → contrato em 5 etapas, mapeamento campo→cláusula, templates |
+
+### Marcas de revisão em `.docx`
+
+A pasta `shared/` traz a biblioteca que gera o redline. Você não precisa conhecê-la para usar a
+skill — basta anexar o `.docx` e pedir a revisão com marcas —, mas vale saber o que ela protege:
+
+- **As revisões e os comentários da outra parte são preservados**, e a skill confere isso
+  rejeitando as próprias marcas e comparando o resultado com o original, caractere a caractere.
+- **Marca de fim de parágrafo excluída significa "fundir com o próximo", não "apagar"** — tratar
+  como exclusão faz texto do contrato sumir em silêncio.
+- Antes de entregar, o arquivo passa por uma escada de validação que barra os defeitos que fazem
+  o Word recusar a abertura. Alguns deles o LibreOffice aceita sem reclamar, então "abriu aqui"
+  não é garantia — a escada existe justamente para cobrir isso.
+
+Saída padrão: `[Nome Original] - Comentado.docx` (com marcas) e `[Nome Original] - revisado.docx`
+(versão limpa). O detalhamento técnico está em `shared/revisao-docx-tracked-changes.md`.
+
+> Requer tier **FULL** (ver acima). Em modelos menores a skill entrega comentários em Markdown ou
+> um `.docx` limpo com quadro comparativo, e diz por que não gerou as marcas.
 
 ---
 
@@ -151,6 +178,12 @@ Transforme esta proposta comercial em contrato de prestação de serviços.
 ```
 Monte um checklist de due diligence para aquisição de uma empresa de tecnologia
 (LTDA, SaaS B2B, 50 funcionários, faturamento R$ 10M/ano).
+```
+
+```
+Revise este acordo de investimento pelo lado da investidora e devolva em .docx
+com marcas de revisão, preservando as marcas da outra parte.
+[anexar acordo.docx]
 ```
 
 ---
