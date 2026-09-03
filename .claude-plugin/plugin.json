@@ -1,6 +1,6 @@
 {
   "name": "direito-societario-br",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "Direito societário, empresarial e de família sob a legislação brasileira: análise, elaboração e revisão de contratos e documentos, com calibração de escopo por capacidade do modelo. Inclui os skills direito-societario-br e direito-familia-br e a biblioteca compartilhada de marcas de revisão em .docx.",
   "author": {
     "name": "Carlos Gamboa"

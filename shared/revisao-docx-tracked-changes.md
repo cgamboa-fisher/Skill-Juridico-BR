@@ -117,15 +117,34 @@ Cada degrau pega uma classe de defeito que o anterior **não** pega. Parar no de
 | # | Verificação | Pega | Deixa passar |
 |---|---|---|---|
 | 1 | XML bem-formado (`minidom.parseString`) | Malformação | Tudo o mais |
-| 2 | `w:t` nunca dentro de `w:del`; `w:delText` sempre dentro | Corrupção clássica de nó de texto | Ordem, semântica, numeração |
+| 2 | **Os dois pares** de nó de texto (ver abaixo) | Corrupção clássica de nó de texto | Ordem, semântica, numeração |
+| 2b | Ids hex no pacote inteiro (`check_hex_ids`) | **Arquivo que o Word recusa** e o LibreOffice abre | Tudo o mais |
 | 3 | Ordem do `CT_PPr` + `rPr` não duplicado | **Arquivo que o Word recusa** | Perda de texto, renumeração |
 | 4 | **Rejeitar as suas revisões reproduz o original**, caractere a caractere | Destruição de conteúdo alheio | Renumeração |
-| 5 | **Abrir o arquivo** + diferenciar a numeração contra o baseline | Renumeração, remissões quebradas, parágrafo perdido | — |
+| 5 | **Abrir o arquivo** + diferenciar a numeração contra o baseline | Renumeração, remissões quebradas, parágrafo perdido | Ver a ressalva do degrau 5 |
 
 Comprovado empiricamente: um `rPr` fora de ordem passa nos degraus 1 e 2; uma exclusão sem fusão passa em 1,
 2 e 3; uma subcláusula com `ilvl` errado passa em 1, 2, 3 **e 4**, e só aparece no 5.
 
-### Degrau 5 — abrir de verdade
+### Degrau 2 — são DOIS pares, não um
+
+Dentro de `<w:del>`, **dois** elementos mudam de nome. Esquecer o segundo é o erro que o Word reporta como
+*"An incorrect text node was used"*:
+
+| Fora de `w:del` | Dentro de `w:del` |
+|---|---|
+| `<w:t>` — texto corrido | `<w:delText>` |
+| `<w:instrText>` — **código de campo** | `<w:delInstrText>` |
+
+O segundo par é o traiçoeiro, porque **nenhum outro degrau o pega**: o degrau 4 compara só texto *visível*, e
+código de campo não é visível; o degrau extra confere a *contagem* de `w:instrText`, que continua idêntica —
+o elemento não some, só fica com o nome errado. Em 01.09.2026 um único `<w:instrText>` dentro de `<w:del>`
+passou nos cinco degraus e derrubou a entrega.
+
+Origem prática: excluir um trecho que engole um campo de remissão cruzada (`REF _Ref…`). A defesa em ordem de
+preferência é **não excluir por cima do campo** (§4) e, só se for inevitável, converter os dois pares.
+
+### Degrau 5 — abrir de verdade, e por que não basta
 
 XML bem-formado **não** é evidência de que o Word aceita o arquivo. O único teste válido é abrir:
 
@@ -137,6 +156,14 @@ XML bem-formado **não** é evidência de que o Word aceita o arquivo. O único 
 `ooxml_redline.open_with_libreoffice()` procura o binário nos caminhos usuais. **Sem LibreOffice, o degrau 5
 não tem substituto por checagem de XML** — declare no output que a abertura não foi verificada, em vez de
 apresentar os degraus 1-4 como validação completa.
+
+> **O LibreOffice é permissivo demais para ser o teste final.** Ele abre, sem uma reclamação, pelo menos duas
+> classes de arquivo que o Word recusa: id fora do `ST_LongHexNumber` (degrau 2b) e `<w:instrText>` dentro de
+> `<w:del>` (degrau 2). Ambas aconteceram no mesmo dia, no mesmo documento. "Passou no degrau 5" significa
+> *"o LibreOffice abriu"*, não *"o Word abre"* — e é por isso que os degraus 2 e 2b existem: eles cobrem, por
+> checagem estática, defeitos que o degrau 5 estruturalmente não enxerga.
+>
+> Sintoma diagnóstico: **abre no LibreOffice e não no Word** ⇒ comece por 2 e 2b, nessa ordem.
 
 ### Metodologia de baseline
 
@@ -177,6 +204,8 @@ Práticas:
 | Erro | Correto | Consequência de errar |
 |---|---|---|
 | `<w:t>` dentro de `<w:del>` | `<w:delText>` dentro de `<w:del>` | Texto excluído reaparece ou some de forma inconsistente |
+| `<w:instrText>` dentro de `<w:del>` | `<w:delInstrText>` | Word recusa: *"An incorrect text node was used"*; **passa nos 5 degraus** e o LibreOffice abre |
+| Id com prefixo mnemônico (`ACME0384`) | `hex_id()` — 8 dígitos hex (`M` não é hex) | Word recusa o arquivo inteiro; o LibreOffice abre sem reclamar |
 | Apagar parágrafo com marca de fim excluída | **Fundir com o seguinte** | **Texto do contrato desaparece em silêncio** |
 | `<w:rPr>` no início do `<w:pPr>` | Depois de `pStyle`/`numPr`/`spacing`/`ind` | Word recusa: *"An incorrect text node was used"* |
 | Dois `<w:rPr>` no mesmo `<w:pPr>` | Fundir no existente | Documento inválido |
@@ -196,9 +225,11 @@ Práticas:
 
 ## 8. Checklist de entrega
 
-- [ ] Escada de validação completa, degraus 1 a 5, sem pendências
+- [ ] Escada de validação completa, degraus 1, 2, 2b, 3, 4 e 5, sem pendências
 - [ ] **Rejeitar todas as suas revisões reproduz o original** caractere a caractere
 - [ ] **Arquivo aberto de verdade** (LibreOffice ou Word) — ou declarado como não verificado
+- [ ] `check_hex_ids()` rodado sobre o **.docx gravado**, não sobre o `document.xml`
+- [ ] Se abriu no LibreOffice mas o Word recusou: conferir degrau 2 (os dois pares) e 2b antes de qualquer outra hipótese
 - [ ] Diff de numeração contra `aceitar-tudo(original)`: 0 renumeradas, 0 perdidas, N novas conforme esperado
 - [ ] Remissões cruzadas citadas nas cláusulas novas apontam para os números corretos **após** a inserção
 - [ ] Aba **Revisão** mostra as alterações com o autor esperado
